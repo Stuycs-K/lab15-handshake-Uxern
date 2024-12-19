@@ -25,6 +25,15 @@ int server_setup() {
   =========================*/
 int server_handshake(int *to_client) {
   int from_client;
+  int fd_fifo;
+  if ((fd_fifo = open(WKP, O_RDWR)) == -1) {
+      perror("open");
+      exit(1);
+   }
+  int clinet_pid;
+  read(fd_fifo, &clinet_pid, 4);
+  remove(WKP);
+  int random_fd = open("/dev/random", O_RDONLY, 0440);
   return from_client;
 }
 
@@ -40,6 +49,13 @@ int server_handshake(int *to_client) {
   =========================*/
 int client_handshake(int *to_server) {
   int from_server;
+  int pid = getpid(); //pid = SYN
+  int fd_fifo;
+  if ((fd_fifo = open(WKP, O_RDWR)) == -1) {
+      perror("open");
+      exit(1);
+   }
+  write(fd_fifo, &pid, 4);
   return from_server;
 }
 
