@@ -26,14 +26,24 @@ int server_setup() {
 int server_handshake(int *to_client) {
   int from_client;
   int fd_fifo;
-  if ((fd_fifo = open(WKP, O_RDWR)) == -1) {
+  if ((fd_fifo = open(WKP, O_RDONLY)) == -1) {
       perror("open");
       exit(1);
    }
   int clinet_pid;
   read(fd_fifo, &clinet_pid, 4);
+  printf("Recoeved SYN name (%d)\n", clinet_pid);
+  *to_client = clinet_pid;
   remove(WKP);
-  int random_fd = open("/dev/random", O_RDONLY, 0440);
+  int random_syn = rand(time(NULL));
+  //Private pipe?
+   printf("Sending SYN_ACK (%d)\n", random_syn);
+   write(clinet_pid, &random_syn, 4);
+   int acknowledgement;
+   read(fd_fifo, &acknowledgement, 4);
+   printf("Recieved ACK (%d)\n", acknowledgement);
+  from_client = fd_fifo;
+  close(fd_fifo);
   return from_client;
 }
 
@@ -50,12 +60,20 @@ int server_handshake(int *to_client) {
 int client_handshake(int *to_server) {
   int from_server;
   int pid = getpid(); //pid = SYN
+	from_server = pid;
   int fd_fifo;
-  if ((fd_fifo = open(WKP, O_RDWR)) == -1) {
+  if ((fd_fifo = open(WKP, O_WRONLY)) == -1) {
       perror("open");
       exit(1);
    }
+ *to_server = fd_fifo;
+  printf("Sending SYN (%d) to server\n", pid);
   write(fd_fifo, &pid, 4);
+  int acknowledgement;
+  read(pid, &acknowledgement, 4);
+  printf("Recieved SYN_ACK (%d), sending ACK (%d) to server \n", acknowledgement, acknowledgement + 1);
+  acknowledgement++;
+  write(fd_fifo, &acknowledgement, 4);
   return from_server;
 }
 
