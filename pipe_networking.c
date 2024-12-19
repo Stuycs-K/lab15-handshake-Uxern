@@ -10,12 +10,21 @@
   returns the file descriptor for the upstream pipe.
   =========================*/
 int server_setup() {
+// Client  Server
+// w ----WKP----> r
+// r <---pp----- w
   int from_client = 0;
+  char * fifo = WKP;
+  if (mkfifo(fifo, 0660) == -1 && errno != EEXIST) {
+      perror("mkfifo");
+      exit(1);
+  }
+
   return from_client;
 }
 
 /*=========================
-  server_handshake 
+  server_handshake
   args: int * to_client
 
   Performs the server side pipe 3 way handshake.
@@ -30,19 +39,21 @@ int server_handshake(int *to_client) {
       perror("open");
       exit(1);
    }
+
   int clinet_pid;
   read(fd_fifo, &clinet_pid, 4);
   printf("Recoeved SYN name (%d)\n", clinet_pid);
-  *to_client = clinet_pid;
+  //*to_client = clinet_pid;
   remove(WKP);
-  int random_syn = rand(time(NULL));
+  int random_syn = rand();
   //Private pipe?
    printf("Sending SYN_ACK (%d)\n", random_syn);
+
    write(clinet_pid, &random_syn, 4);
    int acknowledgement;
    read(fd_fifo, &acknowledgement, 4);
    printf("Recieved ACK (%d)\n", acknowledgement);
-  from_client = fd_fifo;
+  //from_client = fd_fifo;
   close(fd_fifo);
   return from_client;
 }
@@ -60,15 +71,26 @@ int server_handshake(int *to_client) {
 int client_handshake(int *to_server) {
   int from_server;
   int pid = getpid(); //pid = SYN
-	from_server = pid;
+	//from_server = pid;
+  //snprintf this;
+  char * pp;
+  if (mkfifo(pp, 0660) == -1 && errno != EEXIST) {
+      perror("mkfifo");
+      exit(1);
+  }
+  if ((pp = open(WKP, O_RDONLY)) == -1) {
+      perror("open");
+      exit(1);
+   }
   int fd_fifo;
   if ((fd_fifo = open(WKP, O_WRONLY)) == -1) {
       perror("open");
       exit(1);
    }
- *to_server = fd_fifo;
+ //*to_server = fd_fifo;
   printf("Sending SYN (%d) to server\n", pid);
   write(fd_fifo, &pid, 4);
+
   int acknowledgement;
   read(pid, &acknowledgement, 4);
   printf("Recieved SYN_ACK (%d), sending ACK (%d) to server \n", acknowledgement, acknowledgement + 1);
@@ -90,5 +112,3 @@ int server_connect(int from_client) {
   int to_client  = 0;
   return to_client;
 }
-
-
