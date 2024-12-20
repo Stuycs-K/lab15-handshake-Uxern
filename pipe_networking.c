@@ -77,27 +77,25 @@ int client_handshake(int *to_server) {
       exit(1);
   }
   //Open private pipe
-  int pp_fd;
-  if ((pp_fd = open(from_server, O_RDONLY)) == -1) {
+  if ((from_server = open(from_server, O_RDONLY)) == -1) {
       perror("open");
       exit(1);
    }
    //Open well known pipe
-  int fd_fifo;
-  if ((fd_fifo = open(WKP, O_WRONLY)) == -1) {
+  if ((to_server = open(WKP, O_WRONLY)) == -1) {
       perror("open");
       exit(1);
    }
  //*to_server = fd_fifo;
  //Start of handshake: sends pid into well known pipe
-  printf("Sending SYN (%d) to server\n", pp);
-  write(fd_fifo, &pp, 4);
+  printf("Sending SYN (%d) to server\n", from_server);
+  write(to_server, from_server, 4);
 
   int acknowledgement;
-  read(pp, &acknowledgement, 4);
+  read(from_server, &acknowledgement, 4);
   printf("Recieved SYN_ACK (%d), sending ACK (%d) to server \n", acknowledgement, acknowledgement + 1);
   acknowledgement++;
-  write(fd_fifo, &acknowledgement, 4);
+  write(from_server, &acknowledgement, 4);
   return from_server;
 }
 
