@@ -6,7 +6,7 @@
 
   creates the WKP and opens it, waiting for a  connection.
   removes the WKP once a connection has been made
-
+  wait why are we doing this in server setup???
   returns the file descriptor for the upstream pipe.
   =========================*/
 int server_setup() {
@@ -70,10 +70,9 @@ int server_handshake(int *to_client) {
   =========================*/
 int client_handshake(int *to_server) {
   int from_server;
-  int pid = getpid(); //pid = SYN
-	//from_server = pid;
+  int pp = getpid(); //pp = SYN
+	//from_server = pp;
   //snprintf this;
-  char * pp;
   if (mkfifo(pp, 0660) == -1 && errno != EEXIST) {
       perror("mkfifo");
       exit(1);
@@ -88,11 +87,11 @@ int client_handshake(int *to_server) {
       exit(1);
    }
  //*to_server = fd_fifo;
-  printf("Sending SYN (%d) to server\n", pid);
-  write(fd_fifo, &pid, 4);
+  printf("Sending SYN (%d) to server\n", pp);
+  write(fd_fifo, &pp, 4);
 
   int acknowledgement;
-  read(pid, &acknowledgement, 4);
+  read(pp, &acknowledgement, 4);
   printf("Recieved SYN_ACK (%d), sending ACK (%d) to server \n", acknowledgement, acknowledgement + 1);
   acknowledgement++;
   write(fd_fifo, &acknowledgement, 4);
