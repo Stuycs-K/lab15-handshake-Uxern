@@ -34,28 +34,28 @@ int server_setup() {
   =========================*/
 int server_handshake(int *to_client) {
   int from_client;
-  int fd_fifo;
+  //int fd_fifo;
   //Open well known pipe
-  if ((fd_fifo = open(WKP, O_RDONLY)) == -1) {
+  if ((from_client = open(WKP, O_RDONLY)) == -1) {
       perror("open");
       exit(1);
    }
-  int clinet_pid;
-  read(fd_fifo, &clinet_pid, 4);
+  //int clinet_pid;
+  read(from_client, to_client, 4);
   //
-  printf("Recoeved SYN name (%d)\n", clinet_pid);
+  printf("Recieved SYN name (%d)\n", to_client);
   //*to_client = clinet_pid;
   remove(WKP);
   int random_syn = rand();
   //Private pipe?
-   printf("Sending SYN_ACK (%d)\n", random_syn);
+  printf("Sending SYN_ACK (%d)\n", random_syn);
 
-   write(clinet_pid, &random_syn, 4);
+   write(to_client, &random_syn, 4);
    int acknowledgement;
-   read(fd_fifo, &acknowledgement, 4);
+   read(from_client, &acknowledgement, 4);
    printf("Recieved ACK (%d)\n", acknowledgement);
   //from_client = fd_fifo;
-  close(fd_fifo);
+  close(from_client);
   return from_client;
 }
 
@@ -70,16 +70,15 @@ int server_handshake(int *to_client) {
   returns the file descriptor for the downstream pipe.
   =========================*/
 int client_handshake(int *to_server) {
-  int from_server;
-  int pp = getpid(); //pp = SYN
+  int from_server = getpid(); //pp = SYN
 	//from_server = pp;
-  if (mkfifo(pp, 0660) == -1 && errno != EEXIST) {
+  if (mkfifo(from_server, 0660) == -1 && errno != EEXIST) {
       perror("mkfifo");
       exit(1);
   }
   //Open private pipe
   int pp_fd;
-  if ((pp_fd = open(pp, O_RDONLY)) == -1) {
+  if ((pp_fd = open(from_server, O_RDONLY)) == -1) {
       perror("open");
       exit(1);
    }
