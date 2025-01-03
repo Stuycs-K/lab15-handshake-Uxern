@@ -1,4 +1,6 @@
 #include "pipe_networking.h"
+#define WKP "mario"
+
 //UPSTREAM = to the server / from the client
 //DOWNSTREAM = to the client / from the server
 /*=========================
@@ -13,12 +15,14 @@ int server_setup() {
 // w ----WKP----> r
 // r <---pp----- w
   int from_client = 0;
-  char * fifo = WKP;
-  if (mkfifo(fifo, 0660) == -1 && errno != EEXIST) {
-      perror("mkfifo");
-      exit(1);
-  }
-
+if (mkfifo(WKP, 0660) == -1 && errno != EEXIST) {
+    perror("mkfifo");
+    exit(1);
+} 
+   if ((from_client = open(WKP, O_RDONLY)) == -1) {
+        perror("open");
+        exit(1);
+   }
   return from_client;
 }
 
@@ -37,26 +41,29 @@ int server_handshake(int *to_client) {
       perror("open");
       exit(1);
    }
+    printf("WKP opened, waiting for client...\n");
   char pp[HANDSHAKE_BUFFER_SIZE];
-  if (read(from_client, pp, sizeof(pp)) <= 0) {
-    perror("read");
-    exit(1);
-  }
-   printf("Sending SYN_ACK (%s)\n", pp);
-   remove(WKP);
+  int bytesread = read(from_client, pp, sizeof(pp) - 1);
+  pp[bytesread] = '\0';
+  
+     remove(WKP);
+
+   printf("Recieved SYN (%s)\n", pp);
   if ((*to_client = open(pp, O_WRONLY)) == -1) {
     perror("open");
     exit(1);
   } 
    int random_syn = rand();
-   write(*to_client, &random_syn, 4);
-   int acknowledgement;
-   read(fd_fifo, &acknowledgement, 4);
-   printf("Recieved ACK (%d)\n", acknowledgement);
+    printf("Sending SYN_ACK (%d)\n", random_syn);
+   write(*to_client, &random_syn, sizeof(random_syn));
+   char acknowledgement[HANDSHAKE_BUFFER_SIZE];
+   bytesread = read(from_client, &acknowledgement, sizeof(acknowledgement) - 1);
+   acknowledgement[bytesread] = '\0';
+   printf("bytesread %d \n", bytesread);	
+   printf("Recieved ACK (%s)\n", acknowledgement);
   close(from_client);
   return from_client;
 }
-
 
 /*=========================
   client_handshake
@@ -76,21 +83,23 @@ int client_handshake(int *to_server) {
   if (mkfifo(pp, 0660) == -1 && errno != EEXIST) {
       perror("mkfifo");
       exit(1);
-  }
+  }else {
+    printf("Private pipe '%s' created successfully\n", pp);
+}
   if ((*to_server = open(WKP, O_WRONLY)) == -1) {
       perror("open");
       exit(1);
    }
  //*to_server = fd_fifo;
-  printf("Sending SYN (%d) to server\n", pp);
-  write(*to_server, pp, 4);
-  from_server = open(private_pipe, O_RDONLY);
+  printf("Sending SYN (%s) to server\n", pp);
+  write(*to_server, pp, sizeof(pp));
+  from_server = open(pp, O_RDONLY);
   int acknowledgement;
-  read(from_server, &acknowledgement, 4);
+  read(from_server, &acknowledgement, sizeof(acknowledgement));
   printf("Recieved SYN_ACK (%d), sending ACK (%d) to server \n", acknowledgement, acknowledgement + 1);
   acknowledgement++;
-  write(*to_server, &acknowledgement, 4);
   remove(pp);
+  write(*to_server, &acknowledgement, sizeof(acknowledgement));
   return from_server;
 }
 

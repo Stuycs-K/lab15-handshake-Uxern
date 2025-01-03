@@ -1,4 +1,5 @@
 #include "pipe_networking.h"
+#define WKP "mario"
 
 int main() {
 
