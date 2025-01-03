@@ -37,14 +37,14 @@ int server_handshake(int *to_client) {
       perror("open");
       exit(1);
    }
-  char private_pipe[HANDSHAKE_BUFFER_SIZE];
-  if (read(from_client, private_pipe, sizeof(private_pipe)) <= 0) {
+  char pp[HANDSHAKE_BUFFER_SIZE];
+  if (read(from_client, pp, sizeof(pp)) <= 0) {
     perror("read");
     exit(1);
   }
-   printf("Sending SYN_ACK (%s)\n", private_pipe);
+   printf("Sending SYN_ACK (%s)\n", pp);
    remove(WKP);
-  if ((*to_client = open(private_pipe, O_WRONLY)) == -1) {
+  if ((*to_client = open(pp, O_WRONLY)) == -1) {
     perror("open");
     exit(1);
   } 
@@ -68,32 +68,29 @@ int server_handshake(int *to_client) {
   returns the file descriptor for the downstream pipe.
   =========================*/
 int client_handshake(int *to_server) {
-  int from_server;
-  int pp = getpid(); //pp = SYN
-	//from_server = pp;
+	int from_server;
+  char pp[HANDSHAKE_BUFFER_SIZE];
+  snprintf(pp, sizeof(pp), "%d", getpid());
+  //from_server = pp;
   //snprintf this;
   if (mkfifo(pp, 0660) == -1 && errno != EEXIST) {
       perror("mkfifo");
       exit(1);
   }
-  if ((pp = open(WKP, O_RDONLY)) == -1) {
-      perror("open");
-      exit(1);
-   }
-  int fd_fifo;
-  if ((fd_fifo = open(WKP, O_WRONLY)) == -1) {
+  if ((*to_server = open(WKP, O_WRONLY)) == -1) {
       perror("open");
       exit(1);
    }
  //*to_server = fd_fifo;
   printf("Sending SYN (%d) to server\n", pp);
-  write(fd_fifo, &pp, 4);
-
+  write(*to_server, pp, 4);
+  from_server = open(private_pipe, O_RDONLY);
   int acknowledgement;
-  read(pp, &acknowledgement, 4);
+  read(from_server, &acknowledgement, 4);
   printf("Recieved SYN_ACK (%d), sending ACK (%d) to server \n", acknowledgement, acknowledgement + 1);
   acknowledgement++;
-  write(fd_fifo, &acknowledgement, 4);
+  write(*to_server, &acknowledgement, 4);
+  remove(pp);
   return from_server;
 }
 
