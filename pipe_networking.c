@@ -47,11 +47,11 @@ int server_handshake(int *to_client) {
   if ((*to_client = open(pp, O_WRONLY)) == -1) {
     perror("open");
     exit(1);
-  } 
+  }
    int random_syn = rand();
    write(*to_client, &random_syn, 4);
    int acknowledgement;
-   read(fd_fifo, &acknowledgement, 4);
+   read(from_client, &acknowledgement, 4);
    printf("Recieved ACK (%d)\n", acknowledgement);
   close(from_client);
   return from_client;
@@ -82,9 +82,9 @@ int client_handshake(int *to_server) {
       exit(1);
    }
  //*to_server = fd_fifo;
-  printf("Sending SYN (%d) to server\n", pp);
+  printf("Sending SYN (%s) to server\n", pp);
   write(*to_server, pp, 4);
-  from_server = open(private_pipe, O_RDONLY);
+  from_server = open(pp, O_RDONLY);
   int acknowledgement;
   read(from_server, &acknowledgement, 4);
   printf("Recieved SYN_ACK (%d), sending ACK (%d) to server \n", acknowledgement, acknowledgement + 1);
