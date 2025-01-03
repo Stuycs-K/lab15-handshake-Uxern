@@ -6,7 +6,6 @@
 
   creates the WKP and opens it, waiting for a  connection.
   removes the WKP once a connection has been made
-  wait why are we doing this in server setup???
   returns the file descriptor for the upstream pipe.
   =========================*/
 int server_setup() {
@@ -34,27 +33,27 @@ int server_setup() {
   =========================*/
 int server_handshake(int *to_client) {
   int from_client;
-  int fd_fifo;
-  if ((fd_fifo = open(WKP, O_RDONLY)) == -1) {
+  if ((from_client = open(WKP, O_RDONLY)) == -1) {
       perror("open");
       exit(1);
    }
-
-  int clinet_pid;
-  read(fd_fifo, &clinet_pid, 4);
-  printf("Recoeved SYN name (%d)\n", clinet_pid);
-  //*to_client = clinet_pid;
-  remove(WKP);
-  int random_syn = rand();
-  //Private pipe?
-   printf("Sending SYN_ACK (%d)\n", random_syn);
-
-   write(clinet_pid, &random_syn, 4);
+  char private_pipe[HANDSHAKE_BUFFER_SIZE];
+  if (read(from_client, private_pipe, sizeof(private_pipe)) <= 0) {
+    perror("read");
+    exit(1);
+  }
+   printf("Sending SYN_ACK (%s)\n", private_pipe);
+   remove(WKP);
+  if ((*to_client = open(private_pipe, O_WRONLY)) == -1) {
+    perror("open");
+    exit(1);
+  } 
+   int random_syn = rand();
+   write(*to_client, &random_syn, 4);
    int acknowledgement;
    read(fd_fifo, &acknowledgement, 4);
    printf("Recieved ACK (%d)\n", acknowledgement);
-  //from_client = fd_fifo;
-  close(fd_fifo);
+  close(from_client);
   return from_client;
 }
 
