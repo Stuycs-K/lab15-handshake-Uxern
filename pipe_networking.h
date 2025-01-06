@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include <string.h>
 #include <errno.h>
+#include <time.h>
 
 #ifndef NETWORKING_H
 #define NETWORKING_H
@@ -32,7 +33,7 @@ int server_connect(int from_client);
 int server_setup();
 
 //multi_server
-int multi_server_setup();
-int multi_server_connect(int from_client, struct message m);
+//int multi_server_setup();
+//int multi_server_connect(int from_client, struct message m);
 
 #endif
