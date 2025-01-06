@@ -37,14 +37,13 @@ if (mkfifo(WKP, 0660) == -1 && errno != EEXIST) {
   =========================*/
 int server_handshake(int *to_client) {
   int from_client;
+  srand(time(NULL));
   if ((from_client = open(WKP, O_RDONLY)) == -1) {
       perror("open");
       exit(1);
    }
-    printf("WKP opened, waiting for client...\n");
   char pp[HANDSHAKE_BUFFER_SIZE];
-  int bytesread = read(from_client, pp, sizeof(pp) - 1);
-  pp[bytesread] = '\0';
+  int bytesread = read(from_client, pp, sizeof(pp));
   
      remove(WKP);
 
@@ -52,15 +51,16 @@ int server_handshake(int *to_client) {
   if ((*to_client = open(pp, O_WRONLY)) == -1) {
     perror("open");
     exit(1);
-  } 
+  }
    int random_syn = rand();
-    printf("Sending SYN_ACK (%d)\n", random_syn);
+   printf("Sending SYN_ACK (%d)\n", random_syn);
    write(*to_client, &random_syn, sizeof(random_syn));
-   char acknowledgement[HANDSHAKE_BUFFER_SIZE];
-   bytesread = read(from_client, &acknowledgement, sizeof(acknowledgement) - 1);
-   acknowledgement[bytesread] = '\0';
-   printf("bytesread %d \n", bytesread);	
-   printf("Recieved ACK (%s)\n", acknowledgement);
+   int ackno;
+   if (read(from_client, &ackno, sizeof(ackno)) <= 0){
+	   perror("read");
+        exit(1);
+    }
+   printf("Recieved ACK (%d)\n", ackno);
   close(from_client);
   return from_client;
 }
@@ -75,7 +75,7 @@ int server_handshake(int *to_client) {
   returns the file descriptor for the downstream pipe.
   =========================*/
 int client_handshake(int *to_server) {
-	int from_server;
+  int from_server;
   char pp[HANDSHAKE_BUFFER_SIZE];
   snprintf(pp, sizeof(pp), "%d", getpid());
   //from_server = pp;
@@ -96,10 +96,11 @@ int client_handshake(int *to_server) {
   from_server = open(pp, O_RDONLY);
   int acknowledgement;
   read(from_server, &acknowledgement, sizeof(acknowledgement));
-  printf("Recieved SYN_ACK (%d), sending ACK (%d) to server \n", acknowledgement, acknowledgement + 1);
-  acknowledgement++;
+  acknowledgement = acknowledgement + 1;
+  printf("Recieved SYN_ACK (%d), sending ACK (%d) to server \n", acknowledgement - 1, acknowledgement);
+  int byteswritten = write(*to_server, &acknowledgement, sizeof(acknowledgement));
   remove(pp);
-  write(*to_server, &acknowledgement, sizeof(acknowledgement));
+  printf("bytes written %d\n", byteswritten);
   return from_server;
 }
 
