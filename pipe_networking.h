@@ -7,13 +7,14 @@
 #include <string.h>
 #include <errno.h>
 #include <time.h>
+#include <signal.h>
 
 #ifndef NETWORKING_H
 #define NETWORKING_H
 #define WKP "mario"
 
 #define HANDSHAKE_BUFFER_SIZE 10
-#define BUFFER_SIZE 1000
+#define BUFFER_SIZE 998
 #define MAX_CLIENTS 100
 
 #define SYN 0

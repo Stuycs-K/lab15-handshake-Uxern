@@ -43,6 +43,7 @@ int server_handshake(int *to_client) {
       exit(1);
    }
   char pp[HANDSHAKE_BUFFER_SIZE];
+  memset(pp, 0, sizeof(pp)); 
   int bytesread = read(from_client, pp, sizeof(pp));
   
      remove(WKP);
@@ -114,6 +115,33 @@ int client_handshake(int *to_server) {
   returns the file descriptor for the downstream pipe.
   =========================*/
 int server_connect(int from_client) {
-  int to_client  = 0;
-  return to_client;
+    int to_client = 0;
+
+    // Complete the communication by reading and writing messages
+    char buffer[BUFFER_SIZE];
+    while (1) {
+        memset(buffer, 0, sizeof(buffer));  // Clear buffer before use
+
+        int bytes_read = read(from_client, buffer, sizeof(buffer) - 1);  // Read message, leaving room for null terminator
+        if (bytes_read <= 0) {
+            perror("Error reading from client");
+            break;
+        }
+
+        printf("Received from client: %s\n", buffer);
+
+        // Ensure buffer does not overflow when adding the "Server received: " prefix
+        int max_len = sizeof(buffer) - strlen("Server received: ") - 1;  // Reserve space for the prefix and null terminator
+        snprintf(buffer, max_len, "Server received: %s", buffer);  // Format safely into buffer
+
+        if (write(from_client, buffer, strlen(buffer)) == -1) {
+            perror("Error writing to client");
+            break;
+        }
+
+        sleep(1);  // Simulate ongoing communication every second
+    }
+
+    close(from_client);  // Close the connection after communication is done
+    return to_client;
 }
