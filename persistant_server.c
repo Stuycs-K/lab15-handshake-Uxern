@@ -23,7 +23,7 @@ int main() {
         int to_client, from_client;
 
         // Create WKP and wait for client
-        printf("Created mario pipe and waiting for a client...\n");
+        printf("Created mario pipe and waiting for a client...\n", WKP);
         from_client = server_setup();
         if (from_client == -1) {
             perror("server setup");
@@ -58,6 +58,6 @@ int main() {
         close(from_client);
     }
 
-    printf("Exiting... \n");
+    printf("j\n");
     return 0;
 }
